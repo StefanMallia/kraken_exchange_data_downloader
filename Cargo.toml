@@ -1,0 +1,13 @@
+[package]
+name = "kraken_exchange_data_downloader"
+version = "0.1.0"
+authors = ["StefanMallia"]
+edition = "2018"
+
+[dependencies]
+ws = { path = "/home/stefan/Sync/Code/kraken_exchange_data_downloader/src/ws-rs", features=["ssl"]}
+json = "0.12.0"
+postgres = "0.17.2"
+rand = "0.7.3"
+datetime = "0.4.2"
+url = "2.1.1"
