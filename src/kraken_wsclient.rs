@@ -27,9 +27,17 @@ impl ws::Factory for MyFactory
 
     fn connection_made(&mut self, ws_out: ws::Sender) -> Client
     {
+        println!("Connected to websocket.");
+        // work around for transferring ownership of Observers from this closure
+        // to Client
+        let mut to_use_observers: Vec<Box<dyn Observer>> = vec![];
+        while self.observers.len() > 0
+        {
+            to_use_observers.push(self.observers.pop().unwrap());
+        }
         Client{ws_out: ws_out, observers: to_use_observers,
-            asset_pairs_vec: asset_pairs_vec.clone(),
-            subscriptions_vec: subscriptions_vec.clone(),
+            asset_pairs_vec: self.asset_pairs_vec.clone(),
+            subscriptions_vec: self.subscriptions_vec.clone(),
             last_update: std::time::Instant::now()}
     }
 }
@@ -39,26 +47,14 @@ pub fn connect(asset_pairs_vec: std::vec::Vec<String>,
                mut observers: Vec<Box<dyn Observer>>)
 {
 
-    //: fn(ws::Sender) -> Client
-    let factory =
-        move |ws_out: ws::Sender|
-            {
-                println!("Connected to websocket.");
-                // work around for transferring ownership of Observers from this closure
-                // to Client
-                let mut to_use_observers: Vec<Box<dyn Observer>> = vec![];
-                while observers.len() > 0
-                {
-                    to_use_observers.push(observers.pop().unwrap());
-                }
-                Client {
-                    ws_out: ws_out,
-                    observers: to_use_observers,
-                    asset_pairs_vec: asset_pairs_vec.clone(),
-                    subscriptions_vec: subscriptions_vec.clone(),
-                    last_update: std::time::Instant::now()
-                }
-            };
+    let mut to_use_observers: Vec<Box<dyn Observer>> = vec![];
+    while observers.len() > 0
+    {
+        to_use_observers.push(observers.pop().unwrap());
+    }
+    let factory = MyFactory{observers: to_use_observers,
+        asset_pairs_vec: asset_pairs_vec.clone(),
+        subscriptions_vec: subscriptions_vec.clone()};
     let settings = ws::Settings {
         ..Default::default()
     };
