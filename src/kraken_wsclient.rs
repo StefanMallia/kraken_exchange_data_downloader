@@ -9,6 +9,31 @@ pub trait Observer
     fn receive_message(&mut self, json_message: &json::JsonValue);
 }
 
+
+
+
+
+struct MyFactory
+{
+    observers: Vec<Box<dyn Observer>>,
+    asset_pairs_vec: std::vec::Vec<String>,
+    subscriptions_vec: std::vec::Vec<String>
+}
+
+impl ws::Factory for MyFactory
+{
+    type Handler = Client;
+
+
+    fn connection_made(&mut self, ws_out: ws::Sender) -> Client
+    {
+        Client{ws_out: ws_out, observers: to_use_observers,
+            asset_pairs_vec: asset_pairs_vec.clone(),
+            subscriptions_vec: subscriptions_vec.clone(),
+            last_update: std::time::Instant::now()}
+    }
+}
+
 pub fn connect(asset_pairs_vec: std::vec::Vec<String>,
                subscriptions_vec: std::vec::Vec<String>,//,
                mut observers: Vec<Box<dyn Observer>>)
@@ -26,12 +51,15 @@ pub fn connect(asset_pairs_vec: std::vec::Vec<String>,
                 {
                     to_use_observers.push(observers.pop().unwrap());
                 }
-                Client{ws_out: ws_out, observers: to_use_observers,
+                Client {
+                    ws_out: ws_out,
+                    observers: to_use_observers,
                     asset_pairs_vec: asset_pairs_vec.clone(),
                     subscriptions_vec: subscriptions_vec.clone(),
-                    last_update: std::time::Instant::now()}
+                    last_update: std::time::Instant::now()
+                }
             };
-    let settings = ws::Settings{
+    let settings = ws::Settings {
         ..Default::default()
     };
     let mut websocket = ws::Builder::new().with_settings(settings).build(factory).unwrap();
@@ -39,8 +67,41 @@ pub fn connect(asset_pairs_vec: std::vec::Vec<String>,
 
     websocket.connect(url::Url::parse("wss://ws.kraken.com").unwrap());
     websocket.run();
-
 }
+
+
+
+// pub fn connect(asset_pairs_vec: std::vec::Vec<String>,
+//                subscriptions_vec: std::vec::Vec<String>,//,
+//                mut observers: Vec<Box<dyn Observer>>)
+// {
+//
+//     //: fn(ws::Sender) -> Client
+//     let factory =
+//         move |ws_out: ws::Sender|
+//         {
+//             println!("Connected to websocket.");
+//             // work around for transferring ownership of Observers from this closure
+//             // to Client
+//             let mut to_use_observers: Vec<Box<dyn Observer>> = vec![];
+//             while observers.len() > 0
+//             {
+//                 to_use_observers.push(observers.pop().unwrap());
+//             }
+//             Client{ws_out: ws_out, observers: to_use_observers,
+//                 asset_pairs_vec: asset_pairs_vec.clone(),
+//                 subscriptions_vec: subscriptions_vec.clone(),
+//                 last_update: std::time::Instant::now()}
+//         };
+//     let settings = ws::Settings{
+//         ..Default::default()
+//     };
+//     let mut websocket = ws::Builder::new().with_settings(settings).build(factory).unwrap();
+//
+//
+//     websocket.connect(url::Url::parse("wss://ws.kraken.com").unwrap());
+//     websocket.run();
+// }
 
 struct Client
 {
