@@ -40,6 +40,17 @@ impl ws::Factory for MyFactory
             subscriptions_vec: self.subscriptions_vec.clone(),
             last_update: std::time::Instant::now()}
     }
+    fn connection_lost(&mut self, mut client: Client)
+    {
+        // while client.observers.len() > 0
+        // {
+        //     self.observers.push(client.observers.pop().unwrap());
+        // }
+        println!("Connection lost!");
+    }
+
+
+
 }
 
 pub fn connect(asset_pairs_vec: std::vec::Vec<String>,
@@ -63,6 +74,8 @@ pub fn connect(asset_pairs_vec: std::vec::Vec<String>,
 
     websocket.connect(url::Url::parse("wss://ws.kraken.com").unwrap());
     websocket.run();
+
+
 }
 
 
@@ -168,6 +181,8 @@ impl ws::Handler for Client
         {
            to_transfer_observers.push(self.observers.pop().unwrap());
         }
+        //avoid too many attempts in short time
+        std::thread::sleep(std::time::Duration::from_millis(1000));
         connect(self.asset_pairs_vec.clone(), self.subscriptions_vec.clone(),
                     to_transfer_observers);
         // self.attempt_connect();
@@ -182,6 +197,8 @@ impl ws::Handler for Client
         {
            to_transfer_observers.push(self.observers.pop().unwrap());
         }
+        //avoid too many attempts in short time
+        std::thread::sleep(std::time::Duration::from_millis(1000));
         connect(self.asset_pairs_vec.clone(), self.subscriptions_vec.clone(),
                     to_transfer_observers);
 
@@ -197,6 +214,8 @@ impl ws::Handler for Client
         {
            to_transfer_observers.push(self.observers.pop().unwrap());
         }
+        //avoid too many attempts in short time
+        std::thread::sleep(std::time::Duration::from_millis(1000));
         connect(self.asset_pairs_vec.clone(), self.subscriptions_vec.clone(),
                     to_transfer_observers);
 
@@ -247,6 +266,7 @@ impl ws::Handler for Client
                 }
             }
             self.last_update = std::time::Instant::now();
+            // self.ws_out.close(ws::CloseCode::Normal);
 
 
         }
