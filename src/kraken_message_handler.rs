@@ -25,8 +25,6 @@ impl DbInsertQueue
                 = HashMap::new();
         DbInsertQueue{dict_of_tables, db_client}
     }
-
-
     pub fn prepare_for_db_insert(&mut self, kraken_message: &json::JsonValue)
     {
         // let prices_vec: Vec<&str> = vec![];
@@ -156,7 +154,6 @@ impl DbInsertQueue
                 ].concat();
             let table_name = table_name_string.as_str();
 
-
             //Two example messages:
             // [1234,
             //  { "a": [
@@ -221,20 +218,11 @@ impl DbInsertQueue
             }
 
             }
-            // println!("{} {}", self.dict_of_tables[table_name].len(), table_name);
-            //
-            // println!("{}", self.dict_of_tables[table_name][0].local_time);
-            // println!("{}", table_name);
             if self.dict_of_tables[table_name].len() >= 1000
             {
                 let to_insert_then_remove = &self.dict_of_tables.remove(table_name).unwrap();
                 self.dict_of_tables.insert(table_name.to_string(), vec![]);
 
-                // match &*to_insert_then_remove[0]
-                // {
-                //     KrakenMessage::DepthMessage{price, ..} => println!("{}", price),
-                //     _ => ()
-                // }
                 self.db_client.insert_depth_update(ticker_name.as_str(),
                                                    &to_insert_then_remove,
                                                    depth);
@@ -266,11 +254,6 @@ impl DbInsertQueue
                     })
                 );
 
-
-            
-            // println!("{} {}", self.dict_of_tables[table_name].len(), table_name);
-            //
-            // println!("{}", self.dict_of_tables[table_name][0].local_time);
             if self.dict_of_tables[table_name].len() >= 10
             {
                 let to_insert_then_remove = self.dict_of_tables.remove(table_name).unwrap();
@@ -286,7 +269,6 @@ impl DbInsertQueue
             (! kraken_message[1]["bs"].is_null()
                 & kraken_message[1]["b"].is_null())
         {
-            // println!("{}", kraken_message);
             let message_type_ndx = 2;
             let ticker_name_ndx = 3;
 
@@ -308,7 +290,6 @@ impl DbInsertQueue
                     depth
                 ].concat();
             let table_name = table_name_string.as_str();
-
 
             // [0,
             //  {
@@ -335,11 +316,10 @@ impl DbInsertQueue
                     let is_ask;
                     if *side_of_orders == String::from("as") {is_ask = String::from("TRUE")}
                     else {is_ask = String::from("FALSE")}
-                    // let misc: &str = kraken_msg_data[msg_index][5].as_str().unwrap();
                     self.dict_of_tables.entry(String::from(table_name)
                     ).or_insert_with(|| vec![]);
 
-                    // println!("{}", kraken_msg_data[msg_index][0].to_string());
+
                     self.dict_of_tables.get_mut(table_name).unwrap()
                         .push(
                             Box::new(KrakenMessage::OrderBookMessage{price: kraken_msg_data[msg_index][0].to_string(),
@@ -354,20 +334,12 @@ impl DbInsertQueue
                 }
             }
 
-            // println!("{} {}", self.dict_of_tables[table_name].len(), table_name);
-            //
-            // println!("{}", self.dict_of_tables[table_name][0].local_time);
-            // println!("{}", table_name);
             if self.dict_of_tables[table_name].len() > 0
             {
                 let to_insert_then_remove = &self.dict_of_tables.remove(table_name).unwrap();
                 self.dict_of_tables.insert(table_name.to_string(), vec![]);
 
-                // match &*to_insert_then_remove[0]
-                // {
-                //     KrakenMessage::DepthMessage{price, ..} => println!("{}", price),
-                //     _ => ()
-                // }
+
                 self.db_client.insert_orderbook(ticker_name.as_str(),
                                                 &to_insert_then_remove,
                                                 depth);
@@ -375,7 +347,7 @@ impl DbInsertQueue
         }
         else
         {
-            // println!("else {}", kraken_message)
+
         }
     }
 }
