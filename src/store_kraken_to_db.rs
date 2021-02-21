@@ -1,12 +1,10 @@
 use postgres::{Client, NoTls};
-//use postgres::binary_copy::BinaryCopyOutIter;
 use crate::message_types::{KrakenMessage};
 
 pub struct DbClient
 {
     pub db_name: String,
     pub client: Client,
-    // pub message_id: i16
 }
 impl DbClient
 {
@@ -21,14 +19,8 @@ impl DbClient
             "CREATE EXTENSION IF NOT EXISTS timescaledb;"
 
         ).unwrap();
-        // let volume_prec_per_ticker: HashMap<String, String>
-        //     = [(String::from("USDJPY"), String::from("DECIMAL(18,8)"))
-        //         ].iter().cloned().collect();
+
         println!("Connected to database.");
-        // let price_prec_per_ticker: HashMap<String, String>
-        //     = [(String::from("ADAETH"), String::from("DECIMAL(15,7)")),
-        //
-        // ].iter().cloned().collect();
         DbClient{db_name: db_name.to_string(), client: client}
     }
 
@@ -58,15 +50,6 @@ impl DbClient
         ).unwrap();
     }
 
-    // pub fn insert_trades(&mut self, ticker_name: &str,
-    //                     prices_vec: &Vec<&str>,
-    //                     volumes_vec: &Vec<&str>,
-    //                     timestamps_vec: &Vec<&str>,
-    //                     local_times_vec: &Vec<&str>,
-    //                     sides_vec: &Vec<&str>,
-    //                     order_types_vec: &Vec<&str>,
-    //                     miscs_vec: &Vec<&str>,
-    //                     index_in_message: &Vec<&str>)
     pub fn insert_trades(&mut self, ticker_name: &str,
                          trade_messages_vec: &Vec<Box<KrakenMessage>>)
     {
@@ -74,7 +57,6 @@ impl DbClient
 
         for (_x_index, trade_message) in trade_messages_vec.iter().enumerate()
         {
-
             match &**trade_message
             {
                 KrakenMessage::TradeMessage{price, volume,
@@ -94,22 +76,10 @@ impl DbClient
                                    "), "
                                   ].concat(),
                 _ => println!("error")
-
             }
-
         }
         values_string.truncate(values_string.len()-2);
-
-
         println!("Inserted trade: {}", ticker_name);
-        //println!("{}", ["INSERT INTO kraken_trade_", ticker_name, "
-        //    (price, volume, timestamp,
-        //     local_time, side, order_type, misc, index_in_message)
-        //    VALUES ",
-        //    values_string.as_str(),
-        //    ";"
-        //].join("").as_str());
-
         self.client.batch_execute(
             ["INSERT INTO kraken_trade_", ticker_name, "
             (price, volume, timestamp,
@@ -121,15 +91,12 @@ impl DbClient
         ).unwrap();
     }
 
-
     pub fn create_depth_update_table(&mut self, ticker_name: &str, depth: &str)
     {
         {
             let table_name = ["kraken_depth_update_", depth, "_" ,
                 ticker_name.to_lowercase().as_str()].join("");
             let table_name = table_name.as_str();
-
-
             self.client.batch_execute(
                 ["CREATE TABLE IF NOT EXISTS ", table_name, " (
                 row_id                SMALLSERIAL,
@@ -156,8 +123,6 @@ impl DbClient
             let table_name = ["kraken_spread_",
                 ticker_name.to_lowercase().as_str()].join("");
             let table_name = table_name.as_str();
-
-
             self.client.batch_execute(
                 ["CREATE TABLE IF NOT EXISTS ", table_name, " (
                 row_id                SMALLSERIAL,
@@ -183,8 +148,6 @@ impl DbClient
             let table_name = ["kraken_orderbook_", depth, "_" ,
                 ticker_name.to_lowercase().as_str()].join("");
             let table_name = table_name.as_str();
-
-
             self.client.batch_execute(
                 ["CREATE TABLE IF NOT EXISTS ", table_name, " (
                 row_id                SMALLSERIAL,
@@ -203,6 +166,7 @@ impl DbClient
             ).unwrap();
         };
     }
+
     pub fn insert_depth_update(&mut self, ticker_name: &str,
                                depth_messages_vec: &Vec<Box<KrakenMessage>>,
                                depth: &str)
@@ -232,7 +196,7 @@ impl DbClient
         // values_string.truncate(values_string.len()-2);
         //
         // println!("Inserted depth: {}", ticker_name);
-        // //println!("{}", ["INSERT INTO kraken_depth_update_", depth, "_", ticker_name, "
+        // //println!("{}", ["INSERT INTO kraken_depth_update_", depth, "_", ticker_name, "lli
         // //    (price, volume, is_republish, timestamp,
         // //     local_time, index_in_message, is_ask)
         // //    VALUES ",
@@ -275,16 +239,7 @@ impl DbClient
              }
          }
          values_string.truncate(values_string.len()-2);
-        
          println!("Inserted spread: {}", ticker_name);
-         //println!("{}", ["INSERT INTO kraken_depth_update_", depth, "_", ticker_name, "
-         //    (price, volume, is_republish, timestamp,
-         //     local_time, index_in_message, is_ask)
-         //    VALUES ",
-         //    values_string.as_str(),
-         //    ";"
-         //].join("").as_str());
-        
          self.client.batch_execute(
              ["INSERT INTO kraken_spread_",  ticker_name, "
              (bid, ask, bid_volume, ask_volume, timestamp,
@@ -324,16 +279,8 @@ impl DbClient
                 _ => println!("error")
             }
         }
-
         println!("Inserted orderbook: {}", ticker_name);
         values_string.truncate(values_string.len()-2);
-        //println!("{}", ["INSERT INTO kraken_orderbook_", depth, "_", ticker_name, "
-        //    (price, volume, timestamp,
-        //     local_time, index_in_message, is_ask)
-        //    VALUES ",
-        //    values_string.as_str(),
-        //    ";"
-        //].join("").as_str());
 
         self.client.batch_execute(
             ["INSERT INTO kraken_orderbook_", depth, "_",  ticker_name, "
