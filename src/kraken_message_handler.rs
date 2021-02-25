@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::message_types::{KrakenMessage};
 use crate::store_kraken_to_db;
+use crate::store_kraken_to_text;
 
 fn current_time() -> f64
 {
@@ -20,7 +21,6 @@ impl DbInsertQueue
 {
     pub fn new(db_client: store_kraken_to_db::DbClient) -> DbInsertQueue
     {
-
         let dict_of_tables: HashMap<String, Vec<Box<KrakenMessage>>>
                 = HashMap::new();
         DbInsertQueue{dict_of_tables, db_client}
@@ -344,6 +344,221 @@ impl DbInsertQueue
                                                 &to_insert_then_remove,
                                                 depth);
             }
+        }
+        else
+        {
+
+        }
+    }
+}
+
+pub struct TextFileInsertQueue
+{
+    pub dict_of_files: HashMap<String, Vec<Box<json::JsonValue>>>,
+    pub text_file_writer: store_kraken_to_text::TextFile
+}
+impl TextFileInsertQueue
+{
+    pub fn new(text_file_writer: store_kraken_to_text::TextFile) -> TextFileInsertQueue
+    {
+        let dict_of_files: HashMap<String, Vec<Box<json::JsonValue>>>
+            = HashMap::new();
+        TextFileInsertQueue{dict_of_files, text_file_writer}
+    }
+    pub fn prepare_for_text_insert(&mut self, kraken_message: &json::JsonValue)
+    {
+        let local_time = current_time();
+        if kraken_message["event"] == "heartbeat"
+        {
+            // println!("HEARTBEAT {}", kraken_message);
+        }
+        else if kraken_message[2] == "trade"
+        {
+            let ticker_name: String
+                = str::replace(kraken_message[3].as_str().unwrap(), "/", ""
+            ).to_lowercase();
+            let file_name_string
+                = ["kraken_",
+                ticker_name.as_str(),
+                "_trade.json"].concat();
+            let file_name = file_name_string.as_str();
+            self.dict_of_files.entry(String::from(file_name)).or_insert_with(|| vec![]);
+
+            let mut kraken_message_local_time:json::JsonValue = kraken_message.clone();
+            kraken_message_local_time.push(local_time);
+
+            self.dict_of_files.get_mut(file_name).unwrap()
+                .push(Box::new(kraken_message_local_time));
+
+            if self.dict_of_files[file_name].len() > 20
+            {
+                let to_insert_then_remove = &self.dict_of_files.remove(file_name).unwrap();
+                self.dict_of_files.insert(file_name.to_string(), vec![]);
+                self.text_file_writer.append_to_file(file_name, &to_insert_then_remove);
+            }
+
+        }
+        else if (kraken_message[1]["as"].is_null()
+            & ! kraken_message[1]["a"].is_null())
+            |
+            (kraken_message[1]["bs"].is_null()
+                & ! kraken_message[1]["b"].is_null())
+        {
+            // println!("{}", kraken_message);
+            let message_type_ndx;
+            let ticker_name_ndx;
+            let both_a_and_b_ndx;
+            if kraken_message.len() == 4
+            {
+                //either bid or ask data included
+                message_type_ndx = 2;
+                ticker_name_ndx = 3;
+                both_a_and_b_ndx = 2;
+            }
+            else //==5
+            {
+                //both bid and ask data included
+                message_type_ndx = 3;
+                ticker_name_ndx = 4;
+                both_a_and_b_ndx = 3;
+            }
+            let ticker_name: String
+                = str::replace(kraken_message[ticker_name_ndx].as_str().unwrap()
+                               , "/", ""
+            ).to_lowercase();
+            //kraken_message[2][5..] is the depth specified on subscription
+            //each message will contain something like book-100 where
+            //100 is the number of price levels
+            let depth = &kraken_message[message_type_ndx]
+                .as_str().unwrap()
+                .to_string()[5..];
+            let file_name_string
+                =
+                ["kraken_",
+                    ticker_name.as_str(),
+                    "_depth_update_",
+                    depth, ".json"
+                ].concat();
+            let file_name = file_name_string.as_str();
+            //Two example messages:
+            // [1234,
+            //  { "a": [
+            //             ["5541.30000","2.50700000","1534614248.456738"],
+            //             ["5542.50000","0.40100000","1534614248.456738"]
+            //         ]
+            //  },
+            //  {"b": [["5541.30000","0.00000000","1534614335.345903"]]},
+            //  "book-10",
+            //  "XBT/USD"
+            // ]
+            // [1234,
+            //  {"a": [["5541.30000", "2.50700000", "1534614248.456738", "r"],
+            //         ["5542.50000", "0.40100000","1534614248.456738", "r"]
+            //        ]
+            //  },
+            //  "book-25",
+            //  "XBT/USD"
+            // ]
+            self.dict_of_files.entry(String::from(file_name)).or_insert_with(|| vec![]);
+
+            let mut kraken_message_local_time:json::JsonValue = kraken_message.clone();
+            kraken_message_local_time.push(local_time);
+
+            self.dict_of_files.get_mut(file_name).unwrap()
+                .push(Box::new(kraken_message_local_time));
+
+            if self.dict_of_files[file_name].len() > 200
+            {
+                let to_insert_then_remove = &self.dict_of_files.remove(file_name).unwrap();
+                self.dict_of_files.insert(file_name.to_string(), vec![]);
+                self.text_file_writer.append_to_file(file_name, &to_insert_then_remove);
+            }
+
+        }
+        else if kraken_message[2] == "spread"
+        {
+            let ticker_name: String
+                = str::replace(kraken_message[3].as_str().unwrap(), "/", ""
+            ).to_lowercase();
+            let file_name_string
+                = ["kraken_spread_",
+                ticker_name.as_str(), ".json"].concat();
+            let file_name = file_name_string.as_str();
+
+            self.dict_of_files.entry(String::from(file_name)).or_insert_with(|| vec![]);
+
+            let mut kraken_message_local_time:json::JsonValue = kraken_message.clone();
+            kraken_message_local_time.push(local_time);
+
+            self.dict_of_files.get_mut(file_name).unwrap()
+                .push(Box::new(kraken_message_local_time));
+
+            if self.dict_of_files[file_name].len() > 20
+            {
+                let to_insert_then_remove = &self.dict_of_files.remove(file_name).unwrap();
+                self.dict_of_files.insert(file_name.to_string(), vec![]);
+                self.text_file_writer.append_to_file(file_name, &to_insert_then_remove);
+            }
+
+        }
+        else if (! kraken_message[1]["as"].is_null()
+            & kraken_message[1]["a"].is_null())
+            |
+            (! kraken_message[1]["bs"].is_null()
+                & kraken_message[1]["b"].is_null())
+        {
+            let message_type_ndx = 2;
+            let ticker_name_ndx = 3;
+
+            let ticker_name: String
+                = str::replace(kraken_message[ticker_name_ndx].as_str().unwrap()
+                               , "/", ""
+            ).to_lowercase();
+            //kraken_message[2][5..] is the depth specified on subscription
+            //each message will contain something like book-100 where
+            //100 is the number of price levels
+            let depth = &kraken_message[message_type_ndx]
+                .as_str().unwrap()
+                .to_string()[5..];
+            let file_name_string
+                =
+                ["kraken_",
+                    ticker_name.as_str(),
+                    "_orderbook_",
+                    depth, ".json"
+                ].concat();
+            let file_name = file_name_string.as_str();
+
+            // [0,
+            //  {
+            //   "as": [["5541.30000","2.50700000","1534614248.123678"],
+            //          ["5541.80000","0.33000000","1534614098.345543"],
+            //          ["5542.70000", "0.64700000","1534614244.654432"]
+            //         ],
+            //  "bs": [["5541.20000","1.52900000","1534614248.765567"],
+            //         ["5539.90000","0.30000000", "1534614241.769870"],
+            //         ["5539.50000","5.00000000","1534613831.243486"]
+            //        ]
+            //  },
+            //   "book-100",
+            //   "XBT/USD"
+            //  ]
+
+            self.dict_of_files.entry(String::from(file_name)).or_insert_with(|| vec![]);
+
+            let mut kraken_message_local_time:json::JsonValue = kraken_message.clone();
+            kraken_message_local_time.push(local_time);
+
+            self.dict_of_files.get_mut(file_name).unwrap()
+                .push(Box::new(kraken_message_local_time));
+
+            if self.dict_of_files[file_name].len() > 0
+            {
+                let to_insert_then_remove = &self.dict_of_files.remove(file_name).unwrap();
+                self.dict_of_files.insert(file_name.to_string(), vec![]);
+                self.text_file_writer.append_to_file(file_name, &to_insert_then_remove);
+            }
+
         }
         else
         {
