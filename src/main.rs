@@ -24,33 +24,50 @@ impl kraken_wsclient::Observer for kraken_message_handler::TextFileInsertQueue
 fn main()
 {
     let db_credentials: std::string::String;
-    let mut db_username: Option<&str> = None;
-    let mut password: Option<&str> = None;
-    let mut database_name: Option<&str> = None;
-    let mut output_directory: Option<&str> = None;
-    let mut db_credentials_path: Option<&str> = None;
+    let mut db_username: &str = "";
+    let mut password: &str = "";
+    let mut database_name: &str = "";
+    let mut output_directory: &str = "";
+    let mut db_credentials_path: &str = "";
+
 
     let args: Vec<String> = env::args().collect();
+    //if !env::var("DB_USER").is_err() { }
+
+    let mut temp_string1: std::string::String;
+    let mut temp_string2: std::string::String;
+    let mut temp_string3: std::string::String;
+    if !env::var("DB_USER").is_err()
+        && !env::var("DB_PASS").is_err()
+        && !env::var("DB_NAME").is_err()
+    {
+        temp_string1 = env::var("DB_USER").unwrap();
+        db_username = temp_string1.as_str();
+        temp_string2 = env::var("DB_PASS").unwrap().clone();
+        password = temp_string2.as_str();
+        temp_string3 = env::var("DB_NAME").unwrap().clone();
+        database_name = temp_string3.as_str();
+    }
+
     for (arg_index, arg) in args.iter().enumerate()
     {
-        if arg == "--dbname" { database_name = Some(args[arg_index + 1].as_str()) }
-        if arg == "--dbuser" { db_username = Some(args[arg_index + 1].as_str()) }
-        if arg == "--dbpassword" { password = Some(args[arg_index + 1].as_str()) }
-        if arg == "--textoutputdirectory" { output_directory = Some(args[arg_index + 1].as_str()) }
-        if arg == "--dbcredentialsfile" { db_credentials_path = Some(args[arg_index + 1].as_str()) }
-        if (arg == "--help") || (arg=="-h") { println!("Usage:\n--dbname DATABASE_NAME --dbuser DATABASEUSER --dbpassword DATABASEPASSWORD --dbcredentialsfile CREDENTIALSPATH --textoutputdirectory OUTPUTPATH"); }
+        if arg == "--dbname" { database_name = args[arg_index + 1].as_str() }
+        if arg == "--dbuser" { db_username = args[arg_index + 1].as_str() }
+        if arg == "--dbpassword" { password = args[arg_index + 1].as_str() }
+        if arg == "--textoutputdirectory" { output_directory = args[arg_index + 1].as_str() }
+        if arg == "--dbcredentialsfile" { db_credentials_path = args[arg_index + 1].as_str() }
+        if arg == "--help" || (arg=="-h") { println!("Usage:\n--dbname DATABASE_NAME --dbuser DATABASEUSER --dbpassword DATABASEPASSWORD --dbcredentialsfile CREDENTIALSPATH --textoutputdirectory OUTPUTPATH"); }
     }
 
     if args.iter().any(|i| i == "--credentialsfile")
         && args.iter().any(|i| i == "--dbname")
     {
         db_credentials =
-            std::fs::read_to_string(db_credentials_path.unwrap()
+            std::fs::read_to_string(db_credentials_path
             ).expect("Something went wrong reading the file");
         let newline_index: usize = db_credentials.find("\n").unwrap();
-        db_username = Some(&db_credentials[0..newline_index]);
-        password = Some(&db_credentials[newline_index..]);
-
+        db_username = &db_credentials[0..newline_index];
+        password = &db_credentials[newline_index..];
     }
 
     let depth: &str = "25";
@@ -67,16 +84,21 @@ fn main()
 
     let mut queues_vec: Vec<Box<dyn kraken_wsclient::Observer>> = vec![];
 
+
     if (args.iter().any(|i| i == "--credentialsfile")
             && args.iter().any(|i| i == "--dbname"))
        ||
        (args.iter().any(|i| i == "--dbname")
             && args.iter().any(|i| i == "--dbuser")
             && args.iter().any(|i| i == "--dbpassword"))
+       ||
+       (!env::var("DB_USER").is_err()
+           && !env::var("DB_PASS").is_err()
+           && !env::var("DB_NAME").is_err())
     {
         let mut db_client: store_kraken_to_db::DbClient
             = store_kraken_to_db::
-                DbClient::new(database_name.unwrap(), db_username.unwrap(), password.unwrap());
+                DbClient::new(database_name, db_username, password);
 
         for ticker in &asset_pairs_vec
         {
@@ -93,12 +115,11 @@ fn main()
     if args.iter().any(|i| i == "--textoutputdirectory")
     {
         let mut text_writer: store_kraken_to_text::TextFile
-            = store_kraken_to_text::TextFile::new(output_directory.unwrap());
+            = store_kraken_to_text::TextFile::new(output_directory);
         let text_insert_queue: Box<kraken_message_handler::TextFileInsertQueue>
             = Box::new(kraken_message_handler::TextFileInsertQueue::new(text_writer));
         queues_vec.push(text_insert_queue);
     }
     kraken_wsclient::connect(asset_pairs_vec, subscriptions_vec,
                              queues_vec);
-
 }
