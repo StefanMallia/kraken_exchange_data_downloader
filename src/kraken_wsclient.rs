@@ -97,6 +97,7 @@ impl ws::Handler for Client
         }
         Ok(())
     }
+
     fn on_timeout(&mut self, _event: ws::util::Token) -> ws::Result<()>
     {
         println!("Timed out");
@@ -125,6 +126,7 @@ impl ws::Handler for Client
         connect(self.asset_pairs_vec.clone(), self.subscriptions_vec.clone(),
                     to_transfer_observers);
     }
+
     fn on_close(&mut self, code: ws::CloseCode, reason: &str)
     {
         let code_int: u16 = code.into();

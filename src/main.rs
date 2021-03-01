@@ -30,7 +30,6 @@ fn main()
     let mut output_directory: &str = "";
     let mut db_credentials_path: &str = "";
 
-
     let args: Vec<String> = env::args().collect();
     //if !env::var("DB_USER").is_err() { }
 
@@ -48,7 +47,6 @@ fn main()
         temp_string3 = env::var("DB_NAME").unwrap().clone();
         database_name = temp_string3.as_str();
     }
-
     for (arg_index, arg) in args.iter().enumerate()
     {
         if arg == "--dbname" { database_name = args[arg_index + 1].as_str() }
@@ -77,14 +75,12 @@ fn main()
                                                       "ETH/CAD", "ETH/EUR", "ETH/GBP", "ETH/JPY", "ETH/USD",
                                                       "XBT/EUR", "XBT/USD",
                                                       "XMR/XBT", "XMR/EUR", "XMR/USD", "EUR/USD", "GBP/USD", "USD/CAD", "USD/JPY"
-    ].into_iter().map(String::from).collect();
+                                                     ].into_iter().map(String::from).collect();
     let subscriptions_vec: std::vec::Vec<String> = vec!["{\"name\": \"trade\"}",
                                                         ["{\"name\": \"book\", \"depth\": ", depth, "}"].concat().as_str()
                                                        ].into_iter().map(String::from).collect(); //"{\"name\": \"spread\"}"
 
     let mut queues_vec: Vec<Box<dyn kraken_wsclient::Observer>> = vec![];
-
-
     if (args.iter().any(|i| i == "--credentialsfile")
             && args.iter().any(|i| i == "--dbname"))
        ||

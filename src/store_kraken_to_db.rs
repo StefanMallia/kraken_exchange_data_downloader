@@ -6,6 +6,7 @@ pub struct DbClient
     pub db_name: String,
     pub client: Client,
 }
+
 impl DbClient
 {
     pub fn new(db_name: &str, username: &str, password: &str) -> DbClient
@@ -256,11 +257,8 @@ impl DbClient
                             depth: &str)
     {
         let mut values_string: String = String::new();
-
         for (_x_index, orderbook_message) in orderbook_messages_vec.iter().enumerate()
         {
-
-
             match &**orderbook_message
             {
                 KrakenMessage::OrderBookMessage{price, volume, timestamp,
@@ -281,7 +279,6 @@ impl DbClient
         }
         println!("Inserted orderbook: {}", ticker_name);
         values_string.truncate(values_string.len()-2);
-
         self.client.batch_execute(
             ["INSERT INTO kraken_orderbook_", depth, "_",  ticker_name, "
             (price, volume, timestamp,
@@ -292,5 +289,4 @@ impl DbClient
             ].join("").as_str()
         ).unwrap();
     }
-
 }
