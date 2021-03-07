@@ -172,48 +172,39 @@ impl DbClient
                                depth_messages_vec: &Vec<Box<KrakenMessage>>,
                                depth: &str)
     {
-        // let mut values_string: String = String::new();
-        //
-        // for (_x_index, depth_message) in depth_messages_vec.iter().enumerate()
-        // {
-        //     match &**depth_message
-        //     {
-        //         KrakenMessage::DepthMessage{price, volume, is_republish, timestamp,
-        //             local_time, index_in_message, is_ask} =>
-        //         // let depth_message = kraken_message.DepthMessage;
-        //             values_string = [values_string.as_str(), "(",
-        //                              price.as_str(), ", ",
-        //                              volume.as_str(), ", ",
-        //                              is_republish.as_str(), ", to_timestamp(",
-        //                              timestamp.as_str(), "), to_timestamp(",
-        //                              local_time.as_str(), "), ",
-        //                              index_in_message.as_str(), ", ",
-        //                              is_ask.as_str(),
-        //                              "), "
-        //                             ].concat(),
-        //         _ => println!("error")
-        //     }
-        // }
-        // values_string.truncate(values_string.len()-2);
-        //
-        // println!("Inserted depth: {}", ticker_name);
-        // //println!("{}", ["INSERT INTO kraken_depth_update_", depth, "_", ticker_name, "lli
-        // //    (price, volume, is_republish, timestamp,
-        // //     local_time, index_in_message, is_ask)
-        // //    VALUES ",
-        // //    values_string.as_str(),
-        // //    ";"
-        // //].join("").as_str());
-        //
-        // self.client.batch_execute(
-        //     ["INSERT INTO kraken_depth_update_", depth, "_",  ticker_name, "
-        //     (price, volume, is_republish, timestamp,
-        //      local_time, index_in_message, is_ask)
-        //     VALUES ",
-        //         values_string.as_str(),
-        //         ";"
-        //     ].join("").as_str()
-        // ).unwrap();
+        let mut values_string: String = String::new();
+
+        for (_x_index, depth_message) in depth_messages_vec.iter().enumerate()
+        {
+            match &**depth_message
+            {
+                KrakenMessage::DepthMessage{price, volume, is_republish, timestamp,
+                    local_time, index_in_message, is_ask} =>
+                // let depth_message = kraken_message.DepthMessage;
+                    values_string = [values_string.as_str(), "(",
+                                     price.as_str(), ", ",
+                                     volume.as_str(), ", ",
+                                     is_republish.as_str(), ", to_timestamp(",
+                                     timestamp.as_str(), "), to_timestamp(",
+                                     local_time.as_str(), "), ",
+                                     index_in_message.as_str(), ", ",
+                                     is_ask.as_str(),
+                                     "), "
+                                    ].concat(),
+                _ => println!("error")
+            }
+        }
+        values_string.truncate(values_string.len()-2);
+        println!("Inserted depth: {}", ticker_name);
+        self.client.batch_execute(
+            ["INSERT INTO kraken_depth_update_", depth, "_",  ticker_name, "
+            (price, volume, is_republish, timestamp,
+             local_time, index_in_message, is_ask)
+            VALUES ",
+                values_string.as_str(),
+                ";"
+            ].join("").as_str()
+        ).unwrap();
     }
     
     pub fn insert_spreads(&mut self, ticker_name: &str,

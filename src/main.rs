@@ -105,7 +105,8 @@ fn main()
 
         }
         let db_insert_queue: Box<kraken_message_handler::DbInsertQueue>
-            = Box::new(kraken_message_handler::DbInsertQueue::new(db_client));
+            = Box::new(kraken_message_handler::DbInsertQueue::new(db_client,
+                                                                  true));
         queues_vec.push(db_insert_queue);
     }
     if args.iter().any(|i| i == "--textoutputdirectory")
