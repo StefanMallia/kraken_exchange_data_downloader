@@ -15,15 +15,16 @@ fn current_time() -> f64
 pub struct DbInsertQueue
 {
     pub dict_of_tables: HashMap<String, Vec<Box<KrakenMessage>>>,
-    pub db_client: store_kraken_to_db::DbClient
+    pub db_client: store_kraken_to_db::DbClient,
+    pub ignore_depth_ticks: bool
 }
 impl DbInsertQueue
 {
-    pub fn new(db_client: store_kraken_to_db::DbClient) -> DbInsertQueue
+    pub fn new(db_client: store_kraken_to_db::DbClient, ignore_depth_ticks: bool) -> DbInsertQueue
     {
         let dict_of_tables: HashMap<String, Vec<Box<KrakenMessage>>>
                 = HashMap::new();
-        DbInsertQueue{dict_of_tables, db_client}
+        DbInsertQueue{dict_of_tables, db_client, ignore_depth_ticks}
     }
     pub fn prepare_for_db_insert(&mut self, kraken_message: &json::JsonValue)
     {
@@ -111,11 +112,15 @@ impl DbInsertQueue
                                              &to_insert_then_remove);
             }
         }
-        else if (kraken_message[1]["as"].is_null()
-                & ! kraken_message[1]["a"].is_null())
-                |
-                (kraken_message[1]["bs"].is_null()
-                & ! kraken_message[1]["b"].is_null())
+        else if (
+                     (kraken_message[1]["as"].is_null()
+                     & ! kraken_message[1]["a"].is_null())
+                     |
+                     (kraken_message[1]["bs"].is_null()
+                     & ! kraken_message[1]["b"].is_null())
+                )
+                &
+                !self.ignore_depth_ticks
         {
             // println!("{}", kraken_message);
             let message_type_ndx;
