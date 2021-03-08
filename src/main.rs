@@ -92,9 +92,9 @@ fn main()
            && !env::var("DB_PASS").is_err()
            && !env::var("DB_NAME").is_err())
     {
-        let mut db_client: store_kraken_to_db::DbClient
+        let mut db_client: store_kraken_to_db::TimescaleDbClient
             = store_kraken_to_db::
-                DbClient::new(database_name, db_username, password);
+                TimescaleDbClient::new(database_name, db_username, password);
 
         for ticker in &asset_pairs_vec
         {
