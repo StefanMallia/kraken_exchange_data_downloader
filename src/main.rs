@@ -1,8 +1,9 @@
-mod kraken_wsclient;
-mod store_kraken_to_db;
-mod store_kraken_to_text;
-mod kraken_message_handler;
-mod message_types;
+pub mod kraken_wsclient;
+pub mod store_kraken_to_db;
+use store_kraken_to_db::DbClient;
+pub mod store_kraken_to_text;
+pub mod kraken_message_handler;
+pub mod message_types;
 use std::env;
 
 impl kraken_wsclient::Observer for kraken_message_handler::DbInsertQueue

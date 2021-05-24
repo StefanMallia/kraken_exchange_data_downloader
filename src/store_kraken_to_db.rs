@@ -1,6 +1,25 @@
 use postgres::{Client, NoTls};
 use crate::message_types::{KrakenMessage};
 
+pub trait DbClient
+{
+    fn new(db_name: &str, username: &str, password: &str) -> Self;
+    fn create_trade_table(&mut self, ticker_name: &str);
+    fn insert_trades(&mut self, ticker_name: &str,
+                         trade_messages_vec: &Vec<Box<KrakenMessage>>);
+    fn create_depth_update_table(&mut self, ticker_name: &str, depth: &str);
+    fn create_spread_table(&mut self, ticker_name: &str);
+    fn create_orderbook_table(&mut self, ticker_name: &str, depth: &str);
+    fn insert_depth_update(&mut self, ticker_name: &str,
+                               depth_messages_vec: &Vec<Box<KrakenMessage>>,
+                               depth: &str);
+    fn insert_spreads(&mut self, ticker_name: &str,
+                          spread_messages_vec: &Vec<Box<KrakenMessage>>);
+    fn insert_orderbook(&mut self, ticker_name: &str,
+                            orderbook_messages_vec: &Vec<Box<KrakenMessage>>,
+                            depth: &str);
+}
+
 pub struct PostgresDbClient
 {
     pub db_name: String,
@@ -271,9 +290,9 @@ pub struct TimescaleDbClient
     pub client: Client,
 }
 
-impl TimescaleDbClient
+impl DbClient for TimescaleDbClient
 {
-    pub fn new(db_name: &str, username: &str, password: &str) -> TimescaleDbClient
+    fn new(db_name: &str, username: &str, password: &str) -> TimescaleDbClient
     {
         let mut client =
             Client::connect(["dbname= ", db_name," host=localhost user=",
@@ -288,7 +307,7 @@ impl TimescaleDbClient
         TimescaleDbClient{db_name: db_name.to_string(), client: client}
     }
 
-    pub fn create_trade_table(&mut self, ticker_name: &str)
+    fn create_trade_table(&mut self, ticker_name: &str)
     {
         let table_name = ["kraken_trade_" ,
             ticker_name.to_lowercase().as_str()].join("");
@@ -314,8 +333,8 @@ impl TimescaleDbClient
         ).unwrap();
     }
 
-    pub fn insert_trades(&mut self, ticker_name: &str,
-                         trade_messages_vec: &Vec<Box<KrakenMessage>>)
+    fn insert_trades(&mut self, ticker_name: &str,
+                     trade_messages_vec: &Vec<Box<KrakenMessage>>)
     {
         let mut values_string: String = String::new();
 
@@ -355,7 +374,7 @@ impl TimescaleDbClient
         ).unwrap();
     }
 
-    pub fn create_depth_update_table(&mut self, ticker_name: &str, depth: &str)
+    fn create_depth_update_table(&mut self, ticker_name: &str, depth: &str)
     {
         {
             let table_name = ["kraken_depth_update_", depth, "_" ,
@@ -381,7 +400,7 @@ impl TimescaleDbClient
         };
     }
 
-    pub fn create_spread_table(&mut self, ticker_name: &str)
+    fn create_spread_table(&mut self, ticker_name: &str)
     {
         {
             let table_name = ["kraken_spread_",
@@ -406,7 +425,7 @@ impl TimescaleDbClient
         };
     }
 
-    pub fn create_orderbook_table(&mut self, ticker_name: &str, depth: &str)
+    fn create_orderbook_table(&mut self, ticker_name: &str, depth: &str)
     {
         {
             let table_name = ["kraken_orderbook_", depth, "_" ,
@@ -431,9 +450,9 @@ impl TimescaleDbClient
         };
     }
 
-    pub fn insert_depth_update(&mut self, ticker_name: &str,
-                               depth_messages_vec: &Vec<Box<KrakenMessage>>,
-                               depth: &str)
+    fn insert_depth_update(&mut self, ticker_name: &str,
+                           depth_messages_vec: &Vec<Box<KrakenMessage>>,
+                           depth: &str)
     {
         let mut values_string: String = String::new();
 
@@ -470,8 +489,8 @@ impl TimescaleDbClient
         ).unwrap();
     }
 
-    pub fn insert_spreads(&mut self, ticker_name: &str,
-                          spread_messages_vec: &Vec<Box<KrakenMessage>>)
+    fn insert_spreads(&mut self, ticker_name: &str,
+                      spread_messages_vec: &Vec<Box<KrakenMessage>>)
     {
         let mut values_string: String = String::new();
 
@@ -506,9 +525,9 @@ impl TimescaleDbClient
         ).unwrap();
     }
 
-    pub fn insert_orderbook(&mut self, ticker_name: &str,
-                            orderbook_messages_vec: &Vec<Box<KrakenMessage>>,
-                            depth: &str)
+    fn insert_orderbook(&mut self, ticker_name: &str,
+                        orderbook_messages_vec: &Vec<Box<KrakenMessage>>,
+                        depth: &str)
     {
         let mut values_string: String = String::new();
         for (_x_index, orderbook_message) in orderbook_messages_vec.iter().enumerate()

@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use crate::message_types::{KrakenMessage};
 use crate::store_kraken_to_db;
+use store_kraken_to_db::DbClient;
 use crate::store_kraken_to_text;
+
+
 
 fn current_time() -> f64
 {
