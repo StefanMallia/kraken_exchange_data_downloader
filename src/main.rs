@@ -55,7 +55,13 @@ fn main()
         if arg == "--dbpassword" { password = args[arg_index + 1].as_str() }
         if arg == "--textoutputdirectory" { output_directory = args[arg_index + 1].as_str() }
         if arg == "--dbcredentialsfile" { db_credentials_path = args[arg_index + 1].as_str() }
-        if arg == "--help" || (arg=="-h") { println!("Usage:\n--dbname DATABASE_NAME --dbuser DATABASEUSER --dbpassword DATABASEPASSWORD --dbcredentialsfile CREDENTIALSPATH --textoutputdirectory OUTPUTPATH"); }
+        if arg == "--help" || (arg=="-h")
+        {
+            println!("Usage:\n--dbname DATABASE_NAME --dbuser DATABASEUSER\
+                      --dbpassword DATABASEPASSWORD --dbcredentialsfile\
+                      CREDENTIALSPATH --textoutputdirectory OUTPUTPATH");
+            std::process::exit(0);
+        }
     }
 
     if args.iter().any(|i| i == "--credentialsfile")
