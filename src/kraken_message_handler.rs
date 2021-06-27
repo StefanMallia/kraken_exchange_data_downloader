@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use crate::message_types::{KrakenMessage};
 use crate::store_kraken_to_db;
+use store_kraken_to_db::DbClient;
 use crate::store_kraken_to_text;
+
+
 
 fn current_time() -> f64
 {
@@ -15,12 +18,12 @@ fn current_time() -> f64
 pub struct DbInsertQueue
 {
     pub dict_of_tables: HashMap<String, Vec<Box<KrakenMessage>>>,
-    pub db_client: store_kraken_to_db::DbClient,
+    pub db_client: store_kraken_to_db::TimescaleDbClient,
     pub ignore_depth_ticks: bool
 }
 impl DbInsertQueue
 {
-    pub fn new(db_client: store_kraken_to_db::DbClient, ignore_depth_ticks: bool) -> DbInsertQueue
+    pub fn new(db_client: store_kraken_to_db::TimescaleDbClient, ignore_depth_ticks: bool) -> DbInsertQueue
     {
         let dict_of_tables: HashMap<String, Vec<Box<KrakenMessage>>>
                 = HashMap::new();

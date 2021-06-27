@@ -1,8 +1,9 @@
-mod kraken_wsclient;
-mod store_kraken_to_db;
-mod store_kraken_to_text;
-mod kraken_message_handler;
-mod message_types;
+pub mod kraken_wsclient;
+pub mod store_kraken_to_db;
+use store_kraken_to_db::DbClient;
+pub mod store_kraken_to_text;
+pub mod kraken_message_handler;
+pub mod message_types;
 use std::env;
 
 impl kraken_wsclient::Observer for kraken_message_handler::DbInsertQueue
@@ -54,7 +55,13 @@ fn main()
         if arg == "--dbpassword" { password = args[arg_index + 1].as_str() }
         if arg == "--textoutputdirectory" { output_directory = args[arg_index + 1].as_str() }
         if arg == "--dbcredentialsfile" { db_credentials_path = args[arg_index + 1].as_str() }
-        if arg == "--help" || (arg=="-h") { println!("Usage:\n--dbname DATABASE_NAME --dbuser DATABASEUSER --dbpassword DATABASEPASSWORD --dbcredentialsfile CREDENTIALSPATH --textoutputdirectory OUTPUTPATH"); }
+        if arg == "--help" || (arg=="-h")
+        {
+            println!("Usage:\n--dbname DATABASE_NAME --dbuser DATABASEUSER\
+                      --dbpassword DATABASEPASSWORD --dbcredentialsfile\
+                      CREDENTIALSPATH --textoutputdirectory OUTPUTPATH");
+            std::process::exit(0);
+        }
     }
 
     if args.iter().any(|i| i == "--credentialsfile")
@@ -92,9 +99,9 @@ fn main()
            && !env::var("DB_PASS").is_err()
            && !env::var("DB_NAME").is_err())
     {
-        let mut db_client: store_kraken_to_db::DbClient
+        let mut db_client: store_kraken_to_db::TimescaleDbClient
             = store_kraken_to_db::
-                DbClient::new(database_name, db_username, password);
+                TimescaleDbClient::new(database_name, db_username, password);
 
         for ticker in &asset_pairs_vec
         {
